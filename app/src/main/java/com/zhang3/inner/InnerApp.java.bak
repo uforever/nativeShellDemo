@@ -1,0 +1,17 @@
+package com.zhang3.inner;
+
+import android.app.Application;
+import android.content.Context;
+import android.util.Log;
+
+public class InnerApp extends Application {
+    public void onCreate() {
+        Log.d("CustomInfo", "InnerApp.onCreate() called");
+        super.onCreate();
+    }
+
+    public void attachBaseContext(Context base) {
+        Log.d("CustomInfo", "InnerApp.attachBaseContext() called");
+        super.attachBaseContext(base);
+    }
+}

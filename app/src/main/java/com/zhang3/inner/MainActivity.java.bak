@@ -1,0 +1,49 @@
+package com.zhang3.inner;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.widget.TextView;
+
+import com.zhang3.inner.databinding.ActivityMainBinding;
+
+import java.util.ArrayList;
+
+public class MainActivity extends AppCompatActivity {
+
+    // Used to load the 'inner' library on application startup.
+//    static {
+//        System.loadLibrary("inner");
+//    }
+
+    private ActivityMainBinding binding;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        // Example of a call to a native method
+        TextView tv = binding.sampleText;
+        tv.setText(getClassLoadersString());
+    }
+
+    /**
+     * A native method that is implemented by the 'inner' native library,
+     * which is packaged with this application.
+     */
+//    public native String stringFromJNI();
+    public String getClassLoadersString() {
+        // 获取当前类加载器
+        ClassLoader classLoader = MainActivity.class.getClassLoader();
+        ArrayList<String> classNames = new ArrayList<>();
+        // 遍历所有父类加载器
+        while (classLoader != null) {
+            classNames.add(classLoader.getClass().getName());
+            classLoader = classLoader.getParent();
+        }
+        return String.join("\n", classNames);
+    }
+}
