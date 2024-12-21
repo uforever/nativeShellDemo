@@ -23,9 +23,8 @@ jstring jstringConcat(JNIEnv *env, jstring str1, jstring str2) {
     return (jstring) env->CallObjectMethod(stringBuilder, toString);
 }
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_zhang3_outer_OuterApp_attachBaseContext(JNIEnv *env, jobject thiz, jobject base) {
+void JNICALL
+bar(JNIEnv *env, jobject thiz, jobject base) {
     LOGI("OuterApp.attachBaseContext() called");
 
     jclass OuterApp = env->GetObjectClass(thiz);
@@ -42,7 +41,7 @@ Java_com_zhang3_outer_OuterApp_attachBaseContext(JNIEnv *env, jobject thiz, jobj
     jmethodID getAbsolutePath = env->GetMethodID(File, "getAbsolutePath", "()Ljava/lang/String;");
     jstring targetDirString = (jstring) env->CallObjectMethod(targetDir, getAbsolutePath);
 
-    jstring targetPathString = jstringConcat(env, targetDirString, env->NewStringUTF("/encrypted.dex"));
+    jstring targetPathString = jstringConcat(env, targetDirString, env->NewStringUTF("/decrypted.dex"));
 
     jmethodID getAssets = env->GetMethodID(OuterApp, "getAssets", "()Landroid/content/res/AssetManager;");
     jobject assetManager = env->CallObjectMethod(thiz, getAssets);
@@ -130,10 +129,8 @@ Java_com_zhang3_outer_OuterApp_attachBaseContext(JNIEnv *env, jobject thiz, jobj
     env->SetObjectField(package, mClassLoader, dexClassLoader);
 }
 
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_zhang3_outer_OuterApp_onCreate(JNIEnv *env, jobject thiz) {
-
+void JNICALL
+foo(JNIEnv *env, jobject thiz) {
     LOGI("OuterApp.onCreate() called");
     jclass OuterApp = env->GetObjectClass(thiz);
     jclass Application = env->GetSuperclass(OuterApp);
@@ -181,4 +178,25 @@ Java_com_zhang3_outer_OuterApp_onCreate(JNIEnv *env, jobject thiz) {
     jmethodID remove = env->GetMethodID(ArrayList, "remove", "(Ljava/lang/Object;)Z");
     env->CallBooleanMethod(allApplications, remove, initialApplication);
     env->SetObjectField(activityThread, mInitialApplication, innerApp);
+}
+
+JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
+    JNIEnv* env;
+    if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
+        return JNI_ERR;
+    }
+
+    // Find your class. JNI_OnLoad is called from the correct class loader context for this to work.
+    jclass c = env->FindClass("com/zhang3/outer/OuterApp");
+    if (c == nullptr) return JNI_ERR;
+
+    // Register your class' native methods.
+    static const JNINativeMethod methods[] = {
+            {"onCreate", "()V", reinterpret_cast<void*>(foo)},
+            {"attachBaseContext", "(Landroid/content/Context;)V", reinterpret_cast<void*>(bar)},
+    };
+    int rc = env->RegisterNatives(c, methods, sizeof(methods)/sizeof(JNINativeMethod));
+    if (rc != JNI_OK) return rc;
+
+    return JNI_VERSION_1_6;
 }
